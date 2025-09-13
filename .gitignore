@@ -1,6 +1,6 @@
 *.idea 
 .gitignore
-# Prerequisites
+
 *.d
 
 # Compiled Object files
