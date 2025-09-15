@@ -32,14 +32,15 @@ def wrangle(df):
     df["pickup_year"] = df["pickup_datetime"].dt.year
     df["pickup_month"] = df["pickup_datetime"].dt.month
     df["pickup_day"] = df["pickup_datetime"].dt.day
-    df["pickup_hour"] = df["pickup_datetime"].dt.hour + df["pickup_datetime"].dt.minute / 60
+    df['hour'] = df.pickup_datetime.dt.hour
     df["pickup_dayofweek"] = df["pickup_datetime"].dt.dayofweek
+    df['dayofyear'] = df.pickup_datetime.dt.dayofyear
 
     df = df.drop(columns=["pickup_datetime"])
 
     df = df.drop(columns=["pickup_year"])
 
-    df['trip_duration_log'] = np.log1p(df['trip_duration'])
+    df['log_trip_duration'] = np.log1p(df.trip_duration)
     df.drop('trip_duration', axis=1, inplace=True)
 
     X = df.drop("trip_duration_log",axis=1)
