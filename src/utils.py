@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import math
+from sklearn.compose import ColumnTransformer , make_column_selector
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 def load_data(dataset_path):
 
@@ -8,6 +10,37 @@ def load_data(dataset_path):
 
     return df
 
+def column_transformation(df):
+    numeric_features = ['pickup_latitude', 'pickup_longitude', 'dropoff_latitude', 'dropoff_longitude','euclidean_distance']
+    categorical_features = ['pickup_dayofweek', 'pickup_month', 'hour', 'dayofyear', 'passenger_count','vendor_id']
+    train_features = categorical_features + numeric_features
+
+    column_transformer = ColumnTransformer([
+        ('ohe', OneHotEncoder(handle_unknown="ignore"), categorical_features),
+        ('scaling', StandardScaler(), numeric_features)
+    ]
+        , remainder='passthrough'
+    )
+
+    return column_transformer ,train_features
+
+def replace_outliers(df, q1=0.01, q3=0.99):
+    df_clean = df.copy()
+
+    for col in df_clean.select_dtypes(include=[np.number]).columns:
+        Q1 = df_clean[col].quantile(q1)
+        Q3 = df_clean[col].quantile(q3)
+        IQR = Q3 - Q1
+
+        lower = Q1 - 1.5 * IQR
+        upper = Q3 + 1.5 * IQR
+
+        outliers = (df_clean[col] < lower) | (df_clean[col] > upper)
+        mean_val = df_clean[col].mean()
+
+        df_clean.loc[outliers, col] = mean_val
+
+    return df_clean
 
 
 def euclidean_distance_row(row):
@@ -24,8 +57,9 @@ def euclidean_distance_row(row):
     return math.sqrt(dx**2 + dy**2)
 
 
+
 def wrangle(df):
-    df = df.drop(columns=["id", "store_and_fwd_flag"], axis=True)
+    df = df.drop(["id", "store_and_fwd_flag"], axis=1)
 
     df["pickup_datetime"] = pd.to_datetime(df["pickup_datetime"])
 
@@ -36,17 +70,15 @@ def wrangle(df):
     df["pickup_dayofweek"] = df["pickup_datetime"].dt.dayofweek
     df['dayofyear'] = df.pickup_datetime.dt.dayofyear
 
-    df = df.drop(columns=["pickup_datetime"])
+    df = df.drop(columns=["pickup_datetime"],axis=1)
 
-    df = df.drop(columns=["pickup_year"])
+    df = df.drop(columns=["pickup_year"],axis=1)
 
     df['log_trip_duration'] = np.log1p(df.trip_duration)
     df.drop('trip_duration', axis=1, inplace=True)
+    df['euclidean_distance'] = df.apply(euclidean_distance_row, axis=1)
 
-    X = df.drop("trip_duration_log",axis=1)
-    t = df["trip_duration_log"]
-
-    return X ,t
+    return df
 
 
 
