@@ -24,7 +24,7 @@ def column_transformation(df):
 
     return column_transformer ,train_features
 
-def replace_outliers(df, q1=0.01, q3=0.99):
+def replace_outliers(df, q1=0.1, q3=0.9):
     df_clean = df.copy()
 
     for col in df_clean.select_dtypes(include=[np.number]).columns:
@@ -81,7 +81,13 @@ def wrangle(df):
     return df
 
 
+def prepare_data(data_path):
+    df = load_data(data_path)
 
+    df  = wrangle(df)
 
+    #df = replace_outliers(df)
+
+    return df
 
 

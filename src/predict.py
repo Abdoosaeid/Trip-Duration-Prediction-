@@ -3,26 +3,40 @@ from sklearn.metrics import mean_squared_error ,r2_score
 import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
-def predict_eval(model, train, train_features, name):
-    print(train_features)
-    y_train_pred = model.predict(train[train_features])
-    rmse = mean_squared_error(train.log_trip_duration, y_train_pred, squared=False)
-    r2 = r2_score(train.log_trip_duration, y_train_pred)
-    print(f"{name} RMSE = {rmse:.4f} - R2 = {r2:.4f}")
-    print([y_train_pred[0:10]])
-    print(train.log_trip_duration[0:10])
+import os
 
-if __name__=="__main__":
-    path = r'D:\Trip-Duration-Prediction-\input\val.csv'
-    df = load_data(path)
-    df  = wrangle(df)
-    df = replace_outliers(df)
-    _,train_features = column_transformation(df)
+import pandas as pd
+from sklearn.metrics import root_mean_squared_error, r2_score
+
+def predict_eval(model, df, train_features, name):
+    y_true = df.log_trip_duration
+    y_pred = model.predict(df[train_features])
+
+    rmse = root_mean_squared_error(y_true, y_pred)
+    r2 = r2_score(y_true, y_pred)
+
+    return {"Model": name, "RMSE": rmse, "R2": r2}
 
 
-    # load linear regression
-    #model1 = joblib.load( "D:\Trip-Duration-Prediction-\models\model1_linear_regression.pkl")
-    model2 = joblib.load( "D:\Trip-Duration-Prediction-\models\model2_Ridge.pkl")
+if __name__ == "__main__":
+    import os, joblib
 
+    path = r"D:\Trip-Duration-Prediction-\input\test.csv"
+    df = prepare_data(path)
+    _, train_features = column_transformation(df)
 
-    predict_eval(model2,df,train_features,"Train")
+    models_dir = r"D:\Trip-Duration-Prediction-\models"
+
+    results = []
+
+    for model_file in os.listdir(models_dir):
+        if model_file.endswith(".pkl"):
+            model_path = os.path.join(models_dir, model_file)
+            model = joblib.load(model_path)
+
+            res = predict_eval(model, df, train_features, model_file)
+            results.append(res)
+
+    # اعرض النتائج كجدول
+    results_df = pd.DataFrame(results)
+    print(results_df)
